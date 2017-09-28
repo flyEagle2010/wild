@@ -1,0 +1,6 @@
+syntax = "proto3";
+message CS_LOGINSERVER  
+{  
+	 string account = 1;  //’À∫≈  
+	 string password = 2; //√‹¬Î
+} 

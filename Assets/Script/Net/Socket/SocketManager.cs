@@ -78,7 +78,10 @@ public class SocketManager
 						lock (MessageCenter.Instance.RecvMessageQueue)
                         {
                             Debug.Log("收到数据:"+msgData.msgId);
-							MessageCenter.Instance.RecvMessageQueue.Enqueue(msgData);
+							NetMsgEvt evt;
+							evt.type = msgData.msgId;
+							evt.data = msgData.bytes;
+							MessageCenter.Instance.RecvMessageQueue.Enqueue(evt);
                         }
                     }
                 }

@@ -11,113 +11,71 @@ using System.Collections.Generic;
 using System;
 using Util;
 
-public struct GameLogicEvent
+public struct NetMsgEvt:type,data
 {
-    public GameLogicEventType eventType;
-    public object eventData;
+    public int type;
+    public byte[] data;
 }
 
-public struct NetMessageEvent
+public struct CustomEvent
 {
-    public ProtocalCommand eventType;
-    public byte[] eventData;
+    public string type;
+    public object data;
 }
 
-public delegate void GameLogicHandle(object data);
-public delegate void NetMsgHandle(byte[] data);
+public delegate void EventHandle(byte[] data);
 
 public class MessageCenter : SingletonMonoBehaviour<MessageCenter>
 {
-    private Dictionary<ProtocalCommand, NetMsgHandle> netMessageEvtList = new Dictionary<ProtocalCommand, NetMsgHandle>();
-	private Dictionary<GameLogicEventType, GameLogicHandle> gameLogicEvtList = new Dictionary<GameLogicEventType, GameLogicHandle>();
-
-    public Queue<NetMessageEvent> RecvMessageQueue = new Queue<NetMessageEvent>();
-	public Queue<NetMessageEvent> SendMessageQueue = new Queue<NetMessageEvent>();
-    public Queue<GameLogicEvent> GameLogicDataQueue = new Queue<GameLogicEvent>();
-
-    //添加网络事件观察者
-    public void addObsever(ProtocalCommand protocalType, NetMsgHandle handle)
-    {
-        if (netMessageEvtList.ContainsKey(protocalType))
-        {
-            netMessageEvtList[protocalType] += handle;
-        }
-        else
-        {
-            netMessageEvtList.Add(protocalType, handle);
-        }
-    }
-
-    //删除网络事件观察者
-    public void removeObserver(ProtocalCommand protocalType, NetMsgHandle handle)
-    {
-        if (netMessageEvtList.ContainsKey(protocalType))
-        {
-            netMessageEvtList[protocalType] -= handle;
-            if (netMessageEvtList[protocalType] == null)
-            {
-                netMessageEvtList.Remove(protocalType);
-            }
-        }
-    }
+    private Dictionary<int, EventHandle> evtHandleDic = new Dictionary<int, EventHandle>();
+    public Queue<NetMsgEvt> RecvMessageQueue = new Queue<NetMsgEvt>();
     
     //添加普通事件观察者
-	public void AddEventListener(GameLogicEventType eventType, GameLogicHandle handle)
+	public void AddEventListener(int eventType, EventHandle handle)
     {
-        if (gameLogicEvtList.ContainsKey(eventType))
+        if (evtHandleDic.ContainsKey(eventType))
         {
-            gameLogicEvtList[eventType] += handle;
+            evtHandleDic[eventType] += handle;
         }
         else
         {
-            gameLogicEvtList.Add(eventType, handle);
+            evtHandleDic.Add(eventType, handle);
         }
     }
 
     //删除普通事件观察者
-	public void RemoveEventListener(GameLogicEventType eventType, GameLogicHandle callback)
+	public void RemoveEventListener(int eventType, GameLogicHandle callback)
     {
-        if (gameLogicEvtList.ContainsKey(eventType))
+        if (evtHandleDic.ContainsKey(eventType))
         {
-            gameLogicEvtList[eventType] -= callback;
-            if (gameLogicEvtList[eventType] == null)
+            evtHandleDic[eventType] -= callback;
+            if (evtHandleDic[eventType] == null)
             {
-                gameLogicEvtList.Remove(eventType);
+                evtHandleDic.Remove(eventType);
             }
         }
     }
-
-    //推送消息
-	public void PostEvent(GameLogicEventType eventType, object data = null)
+    
+    public bool DispatchEvent(CustomEvent evt)
     {
-        if (gameLogicEvtList.ContainsKey(eventType))
+        if (evtHandleDic.ContainsKey(evt.type))
         {
-            gameLogicEvtList[eventType](data);
+            evtHandleDic[evt.type](evt.data);
         }
     }
     
     void Update()
     {
-        while (GameLogicDataQueue.Count > 0)
+        while (RecvMessageQueue.Count > 0)
         {
-            GameLogicEvent gameLogicEvt = GameLogicDataQueue.Dequeue();
-            if (gameLogicEvtList.ContainsKey(gameLogicEvt.eventType))
-            {
-                gameLogicEvtList[gameLogicEvt.eventType](gameLogicEvt.eventData);
-            }
-        }
-
-		while (RecvMessageQueue.Count > 0)
-        {
-			lock (RecvMessageQueue)
+            lock (RecvMessageQueue)
             {
 				NetMessageEvent netMessageEvt = RecvMessageQueue.Dequeue();
-                if (netMessageEvtList.ContainsKey(netMessageEvt.eventType))
+                if (evtDic.ContainsKey(netMessageEvt.eventType))
                 {
-                    netMessageEvtList[netMessageEvt.eventType](netMessageEvt.eventData);
+                    evtDic[netMessageEvt.eventType](netMessageEvt.eventData);
                 }
             }
         }
-
     }
 }

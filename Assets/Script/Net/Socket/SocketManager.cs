@@ -7,6 +7,9 @@ using System;
 using System.Text;
 using System.IO;
 using Google.Protobuf;
+using System.Collections.Generic;
+using System;
+using Util;
 
 public class SocketManager
 {
@@ -17,8 +20,10 @@ public class SocketManager
     private Socket clientSocket = null;
     private Thread receiveThread = null;
 	private Thread sendThread = null;
-   	private DataBuffer dataBuffer = new DataBuffer();
+   	private DataBuff dataBuffer = new DataBuff();
 	private byte[] receiveBuff = new byte[2048];
+
+	private Queue<MsgData> sendMsgQueue = new Queue<MsgData>();
 
 	public static SocketManager Instance
 	{
@@ -40,10 +45,10 @@ public class SocketManager
 				ReConnect();
 				break;
 			}
-			lock (MessageCenter.Instance.SendMessageQueue)
+			lock (sendMsgQueue)
 			{
-				while (MessageCenter.Instance.SendMessageQueue.Count > 0) {
-					MsgData md = MessageCenter.Instance.SendMessageQueue.Dequeue ();
+				while (sendMsgQueue.Count > 0) {
+					MsgData md = sendMsgQueue.Dequeue ();
 					clientSocket.Send (md.Bytes);
 				}
 			}
@@ -69,7 +74,7 @@ public class SocketManager
                 if (receiveLen > 0)
 				{
 					// 将收到的数据添加到缓存器中
-                    dataBuffer.AddBuffer(receiveBuff, receiveLen);
+                    dataBuffer.AddBuff(receiveBuff, receiveLen);
 					MsgData msgData;
 					// 取出一条完整数据
                     while (dataBuffer.GetData(out msgData))
@@ -77,10 +82,10 @@ public class SocketManager
                         //锁死消息中心消息队列，并添加数据
 						lock (MessageCenter.Instance.RecvMessageQueue)
                         {
-                            Debug.Log("收到数据:"+msgData.msgId);
+                            Debug.Log("收到数据:"+msgData.MsgId);
 							NetMsgEvt evt;
-							evt.type = msgData.msgId;
-							evt.data = msgData.bytes;
+							evt.type = msgData.MsgId;
+							evt.data = msgData.Bytes;
 							MessageCenter.Instance.RecvMessageQueue.Enqueue(evt);
                         }
                     }
@@ -155,9 +160,9 @@ public class SocketManager
 	}
 
 	public void SendMsg(MsgData msgData){
-		lock (MessageCenter.Instance.SendMessageQueue)
+		lock (sendMsgQueue)
 		{
-			MessageCenter.Instance.SendMessageQueue.Enqueue(msgData);
+			sendMsgQueue.Enqueue(msgData);
 		}
 	}
 
@@ -173,7 +178,7 @@ public class SocketManager
 	/// <summary>
 	/// 断开
 	/// </summary>
-	private void Close()
+	public void Close()
 	{
 		if (!isConnected) 
 		{
@@ -203,15 +208,15 @@ public class SocketManager
 	}
 
 	public void SendMsgAsyc (MsgData msgData){
-		if (!clientSocket || !clientSocket.Connected)
+		if (clientSocket == null || !clientSocket.Connected)
 		{
 			ReConnect();
 			return;
 		}
 		clientSocket.BeginSend (
-			msgData.bytes, 
+			msgData.Bytes, 
 			0, 
-			msgData.bytes.Length, 
+			msgData.Bytes.Length, 
 			SocketFlags.None, 
 			new AsyncCallback (sendAsycEnd), 
 			clientSocket
@@ -228,7 +233,7 @@ public class SocketManager
 		{
 			Socket client = (Socket)asyncSend.AsyncState;
 			client.EndSend(asyncSend);
-			Debug.Log("send msg ok:",asyncSend);
+			Debug.Log("send msg ok:" + asyncSend);
 		}
 		catch (Exception e)
 		{

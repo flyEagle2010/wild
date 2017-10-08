@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System;
 using Util;
 
-public struct NetMsgEvt:type,data
+public struct NetMsgEvt
 {
     public int type;
     public byte[] data;
@@ -29,7 +29,7 @@ public class MessageCenter : SingletonMonoBehaviour<MessageCenter>
 {
     private Dictionary<int, EventHandle> evtHandleDic = new Dictionary<int, EventHandle>();
     public Queue<NetMsgEvt> RecvMessageQueue = new Queue<NetMsgEvt>();
-    
+	public Queue<MsgData> SendMessageQueue = new Queue<MsgData>();
     //添加普通事件观察者
 	public void AddEventListener(int eventType, EventHandle handle)
     {
@@ -44,7 +44,7 @@ public class MessageCenter : SingletonMonoBehaviour<MessageCenter>
     }
 
     //删除普通事件观察者
-	public void RemoveEventListener(int eventType, GameLogicHandle callback)
+	public void RemoveEventListener(int eventType, EventHandle callback)
     {
         if (evtHandleDic.ContainsKey(eventType))
         {
@@ -58,10 +58,11 @@ public class MessageCenter : SingletonMonoBehaviour<MessageCenter>
     
     public bool DispatchEvent(CustomEvent evt)
     {
-        if (evtHandleDic.ContainsKey(evt.type))
-        {
-            evtHandleDic[evt.type](evt.data);
-        }
+//        if (evtHandleDic.ContainsKey(evt.type))
+//        {
+//            evtHandleDic[evt.type](evt.data);
+//        }
+		return true;
     }
     
     void Update()
@@ -70,10 +71,10 @@ public class MessageCenter : SingletonMonoBehaviour<MessageCenter>
         {
             lock (RecvMessageQueue)
             {
-				NetMessageEvent netMessageEvt = RecvMessageQueue.Dequeue();
-                if (evtDic.ContainsKey(netMessageEvt.eventType))
+				NetMsgEvt netMsgEvt = RecvMessageQueue.Dequeue();
+				if (evtHandleDic.ContainsKey(netMsgEvt.type))
                 {
-                    evtDic[netMessageEvt.eventType](netMessageEvt.eventData);
+					evtHandleDic[netMsgEvt.type](netMsgEvt.data);
                 }
             }
         }

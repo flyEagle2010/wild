@@ -2,7 +2,6 @@
 using System;
 using UnityEngine;
 using Google.Protobuf;
-using protocal_loginserver;
 
 public class MsgData
 {
@@ -18,6 +17,10 @@ public class MsgData
 		get { return pData; }
 	}
 
+	public Int32 MsgId {
+		get { return msgId; }
+	}
+
 	public MsgData(byte[] bytes,int msgId){
 		this.bytes = bytes;
 		this.msgId = msgId;
@@ -26,7 +29,7 @@ public class MsgData
 	public MsgData(IMessage pData,int msgId){
 		this.pData = pData;
 		byte[] tmp = pData.ToByteArray ();
-		int length = tmp.GetLength () + 8;
+		int length = tmp.Length + 8;
 		this.bytes = new byte[length];
 		MemoryStream ms = new MemoryStream ();
 		StreamWriter writer = new StreamWriter (ms);

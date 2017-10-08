@@ -127,12 +127,9 @@
      <Compile Include="Assets\Script\GameConst.cs" />
      <Compile Include="Assets\Script\Main.cs" />
      <Compile Include="Assets\Script\Net\Client.cs" />
-     <Compile Include="Assets\Script\Net\Proto\protocal_loginserver.cs" />
+     <Compile Include="Assets\Script\Net\MsgID.cs" />
      <Compile Include="Assets\Script\Net\Server.cs" />
-     <Compile Include="Assets\Script\Net\Socket\ByteStreamBuff.cs" />
      <Compile Include="Assets\Script\Net\Socket\DataBuff.cs" />
-     <Compile Include="Assets\Script\Net\Socket\DataBuff-old.cs" />
-     <Compile Include="Assets\Script\Net\Socket\EventDefinition.cs" />
      <Compile Include="Assets\Script\Net\Socket\MessageCenter.cs" />
      <Compile Include="Assets\Script\Net\Socket\MsgData.cs" />
      <Compile Include="Assets\Script\Net\Socket\ProtocalDefinition.cs" />
